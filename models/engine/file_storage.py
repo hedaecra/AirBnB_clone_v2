@@ -13,11 +13,17 @@ from models.state import State
 from models.user import User
 
 classes = {"Amenity": Amenity, "BaseModel": BaseModel, "City": City,
-           "Place": Place, "Review": Review, "State": State, "User": User}class FileStorage:
-    """serializes instances to a JSON file & deserializes back to instances"""    # string - path to the JSON file
+           "Place": Place, "Review": Review, "State": State, "User": User}
+
+
+class FileStorage:
+    """serializes instances to a JSON file & deserializes back to instances"""
+
+    # string - path to the JSON file
     __file_path = "file.json"
     # dictionary - empty but will store all objects by <class name>.id
     __objects = {}
+
     def all(self, cls=None):
         """returns the dictionary __objects"""
         if cls is not None:
@@ -49,7 +55,7 @@ classes = {"Amenity": Amenity, "BaseModel": BaseModel, "City": City,
                 jo = json.load(f)
             for key in jo:
                 self.__objects[key] = classes[jo[key]["__class__"]](**jo[key])
-        except:
+        except FileNotFoundError:
             pass
 
     def delete(self, obj=None):
