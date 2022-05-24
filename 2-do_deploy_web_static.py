@@ -2,7 +2,7 @@
 """ Module python called 2-do_deploy_web_static.py """
 from fabric.api import local, put, run, env
 from datetime import datetime
-from os.path import exists
+from os.path import isfile
 
 env.user = 'ubuntu'
 env.hosts = [
@@ -31,22 +31,51 @@ def do_deploy(archive_path):
         Returns True if all operations have been done correctly,
         otherwise returns False
     """
-    if not exists(archive_path):
+    if not isfile(archive_path):
         return False
-    try:
-        filename = archive_path.split("/")[-1]
-        name = filename.split(".")[0]
-        path = "/data/web_static/releases/{}".format(name)
-        put(archive_path, '/tmp/')
-        run('mkdir -p {}/'.format(path))
-        run('tar -xzf /tmp/{} -C {}'.format(filename, path))
-        run('rm /tmp/{}'.format(filename))
-        run('mv {}/web_static/* {}/'.format(path, path))
-        run('rm -rf {}/web_static'.format(path))
-        run('rm -rf /data/web_static/current')
-        run('ln -s {}/ /data/web_static/current'.format(path))
-        print('New version deployed!')
-        return True
-    except Exception as e:
-        print(e)
+    split_path = archive_path.split('/')[1]
+    split_only_name = split_path.split('.')[0]
+    # Uploading file
+    file_up = put(archive_path, '/tmp/')
+    if file_up.failed:
         return False
+    # Create path where uncompress file
+    path_create = run('mkdir -p /data/web_static/releases/{}'.format(
+        split_only_name))
+    if path_create.failed:
+        return False
+    # Uncompress the archive
+    uncomp_file = run(
+        'tar -xzf /tmp/{} -C /data/web_static/releases/{}'.format(
+            split_path, split_only_name))
+    if uncomp_file.failed:
+        return False
+    # Delete the file from the server
+    delete_file = run('rm /tmp/{}'.format(split_path))
+    if delete_file.failed:
+        return False
+    # Move the file to the rute create in path_create
+    move_file = run(
+        'mv /data/web_static/releases/{}/web_static/* \
+            /data/web_static/releases/{}/'.format(
+            split_only_name, split_only_name))
+    if move_file.failed:
+        return False
+    # Delete the empty (now) directory
+    delete_folder = run(
+        'rm -rf /data/web_static/releases/{}/web_static'.format(
+            split_only_name))
+    if delete_folder.failed:
+        return False
+    # Delete symbolic link (current)
+    delete_link = run('rm -rf /data/web_static/current')
+    if delete_link.failed:
+        return False
+    # Create new symbolic link
+    new_link = run(
+        'ln -s /data/web_static/releases/{} /data/web_static/current'.format(
+            split_only_name))
+    if new_link.failed:
+        return False
+
+    return True
