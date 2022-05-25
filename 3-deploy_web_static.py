@@ -6,8 +6,8 @@ from os.path import isfile
 
 env.user = 'ubuntu'
 env.hosts = [
-    '52.55.249.213',
-    '54.157.32.137'
+   '35.196.102.248',
+   '34.148.155.116'
 ]
 
 
